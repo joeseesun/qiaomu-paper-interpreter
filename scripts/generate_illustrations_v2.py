@@ -155,8 +155,11 @@ def generate_from_config(
     for idx, section in enumerate(sections, 1):
         h2_title = section['h2_title']
         visual_desc = section['visual_description']
+        caption = section.get('caption', '')  # 获取底部标题
 
         print(f"\n[{idx}/{len(sections)}] 正在为「{h2_title}」生成配图...")
+        if caption:
+            print(f"   📝 底部标题: {caption}")
 
         # 检查是否需要分析
         if visual_desc == "待Claude分析填写..." or not visual_desc.strip():
@@ -176,11 +179,12 @@ def generate_from_config(
             continue
 
         try:
-            # 生成图片
+            # 生成图片（16:9横幅 + 底部标题）
             print(f"   🎨 视觉描述: {visual_desc[:60]}...")
             image_url, used_provider = generator.generate_newyorker_style(
                 visual_strategy=visual_desc,
-                aspect_ratio='4:3',  # 纽约客经典比例
+                caption=caption,  # 传递底部标题
+                aspect_ratio='16:9',  # 16:9横幅，更适合文章配图
                 max_retries=3
             )
 
