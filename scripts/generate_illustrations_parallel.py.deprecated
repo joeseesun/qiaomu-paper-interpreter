@@ -47,59 +47,8 @@ def parse_h2_sections(markdown_path):
     return sections
 
 
-def create_visual_config_template(markdown_path, output_path="visual_config.json"):
-    """
-    创建视觉配置模板，供Claude填写
-
-    输出JSON格式：
-    {
-        "sections": [
-            {
-                "h2_title": "深度的悖论",
-                "visual_description": "待Claude分析填写...",
-                "caption": ""
-            },
-            ...
-        ]
-    }
-    """
-    from pathlib import Path
-    markdown_path = Path(markdown_path)
-    sections = parse_h2_sections(str(markdown_path))
-
-    config = {
-        "article_title": markdown_path.stem,
-        "sections": [
-            {
-                "h2_title": title,
-                "visual_description": "待Claude分析填写...",
-                "caption": ""
-            }
-            for title, _ in sections
-        ]
-    }
-
-    output_path = markdown_path.parent / output_path
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
-
-    print(f"✅ 配置模板已创建: {output_path}")
-    print(f"📝 请Claude分析文章并填写每个section的visual_description和caption")
-    return str(output_path)
-
-
-def obsidian_safe_path(path):
-    """
-    确保路径在Obsidian中可用
-    如果路径包含空格，用<>包裹（Obsidian要求）
-    """
-    if ' ' in path:
-        return f"<{path}>"
-    return path
-
-
 def insert_image_into_markdown(markdown_path, h2_title, image_path):
-    """在H2标题后插入图片引用（线程安全，防重复，Obsidian兼容）"""
+    """在H2标题后插入图片引用（线程安全，防重复）"""
     with markdown_lock:  # 🔒 保护文件读写
         with open(markdown_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -117,9 +66,8 @@ def insert_image_into_markdown(markdown_path, h2_title, image_path):
                     if 'illustration_' in next_line:
                         return False  # 已有其他配图
 
-                # 插入图片（Obsidian兼容：路径有空格时用<>包裹）
-                safe_path = obsidian_safe_path(image_path)
-                image_md = f"\n![{h2_title}]({safe_path})\n\n"
+                # 插入图片
+                image_md = f"\n![{h2_title}]({image_path})\n\n"
                 lines.insert(i + 1, image_md)
 
                 # 写回文件
@@ -132,23 +80,16 @@ def insert_image_into_markdown(markdown_path, h2_title, image_path):
 
 def generate_single_image(task):
     """生成单张图片的任务函数"""
-    idx, section, markdown_path, abs_output_dir, output_dir, provider, jimeng_model, skip_existing = task
+    idx, section, markdown_path, abs_output_dir, output_dir, provider, skip_existing = task
 
     h2_title = section['h2_title']
     visual_desc = section['visual_description']
     caption = section.get('caption', '')
 
-    # 获取论文唯一标识符（markdown 文件名去扩展名，避免 Obsidian 索引冲突）
-    paper_dir = markdown_path.parent
-    paper_slug = markdown_path.stem  # 使用文件名作为唯一标识符
-
-    # 图片文件名（包含论文标识符，全局唯一）
-    image_filename = f"{paper_slug}-{idx:02d}.png"
+    # 图片路径
+    image_filename = f"illustration_{idx}.png"
     image_output_path = abs_output_dir / image_filename
-
-    # 完整相对路径（从根目录开始），适用于文章移动到根目录后
-    paper_id = paper_dir.name
-    image_rel_path = f"20-29 学习/25 论文库/21.01 papers/{paper_id}/{output_dir}/{image_filename}"
+    image_rel_path = f"{output_dir}/{image_filename}"
 
     result = {
         'idx': idx,
@@ -175,7 +116,7 @@ def generate_single_image(task):
 
     try:
         # 生成图片
-        generator = ImageGenerator(provider=provider, jimeng_model=jimeng_model)
+        generator = ImageGenerator(provider=provider)
         image_url, used_provider = generator.generate_newyorker_style(
             visual_strategy=visual_desc,
             caption=caption,
@@ -216,9 +157,8 @@ def generate_single_image(task):
 def generate_from_config_parallel(
     markdown_path,
     config_path="visual_config.json",
-    output_dir="illustrations",
+    output_dir="images/illustrations",
     provider='jimeng',  # 默认使用jimeng（gemini当前不可用）
-    jimeng_model='jimeng-image-4.5',  # 即梦模型版本
     skip_existing=True,
     max_workers=3  # 并发数
 ):
@@ -226,12 +166,9 @@ def generate_from_config_parallel(
     并发生成所有配图
 
     Args:
-        provider: API提供商（jimeng/gemini/auto）
-        jimeng_model: 即梦模型版本（jimeng-image-4.5收费, jimeng-image-4.1免费）
         max_workers: 并发线程数（建议3-4，避免API限流）
     """
-    # 🔧 修复：转换为绝对路径，确保paper_id能正确提取
-    markdown_path = Path(markdown_path).resolve()
+    markdown_path = Path(markdown_path)
     config_path = markdown_path.parent / config_path
 
     # 1. 读取配置
@@ -253,7 +190,7 @@ def generate_from_config_parallel(
     # 3. 准备任务列表
     tasks = []
     for idx, section in enumerate(sections, 1):
-        tasks.append((idx, section, markdown_path, abs_output_dir, output_dir, provider, jimeng_model, skip_existing))
+        tasks.append((idx, section, markdown_path, abs_output_dir, output_dir, provider, skip_existing))
 
     # 4. 并发生成
     success_count = 0
@@ -305,28 +242,17 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例用法：
-  1. 创建配置模板：
-     python generate_illustrations_v2.py --create-template article.md
-
-  2. 批量并发生成（付费版4.5）：
-     python generate_illustrations_v2.py article.md --workers 3
-
-  3. 免费版配图（4.1模型）：
-     python generate_illustrations_v2.py article.md --free --workers 3
+  python generate_illustrations_parallel.py article.md --workers 4
         """
     )
 
-    parser.add_argument('markdown', nargs='?', help='Markdown文件路径')
-    parser.add_argument('--create-template', metavar='FILE',
-                       help='创建配置模板（无需先分析文章）')
+    parser.add_argument('markdown', help='Markdown文件路径')
     parser.add_argument('--config', default='visual_config.json',
                        help='配置文件路径（默认: visual_config.json）')
-    parser.add_argument('--output-dir', default='illustrations',
+    parser.add_argument('--output-dir', default='images/illustrations',
                        help='图片输出目录（默认: images/illustrations）')
     parser.add_argument('--provider', choices=['jimeng', 'gemini', 'auto'],
                        default='jimeng', help='图片生成API（默认: jimeng）')
-    parser.add_argument('--free', action='store_true',
-                       help='使用免费模型（jimeng-image-4.1）而非付费版（4.5）')
     parser.add_argument('--workers', type=int, default=3,
                        help='并发线程数（默认: 3）')
     parser.add_argument('--no-skip', action='store_true',
@@ -334,25 +260,11 @@ def main():
 
     args = parser.parse_args()
 
-    # 创建模板模式
-    if args.create_template:
-        create_visual_config_template(args.create_template, args.config)
-        return
-
-    # 生成模式
-    if not args.markdown:
-        parser.print_help()
-        return
-
-    # 根据 --free 参数选择模型
-    jimeng_model = 'jimeng-image-4.1' if args.free else 'jimeng-image-4.5'
-
     generate_from_config_parallel(
         markdown_path=args.markdown,
         config_path=args.config,
         output_dir=args.output_dir,
         provider=args.provider,
-        jimeng_model=jimeng_model,
         skip_existing=not args.no_skip,
         max_workers=args.workers
     )

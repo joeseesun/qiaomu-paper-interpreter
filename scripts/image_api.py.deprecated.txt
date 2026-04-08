@@ -1,0 +1,2 @@
+# DEPRECATED: This file has been moved to ~/.claude/skills/shared-lib/image_api.py
+# All scripts now use the shared library. Do not import from this file.

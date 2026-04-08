@@ -2,115 +2,158 @@
 
 ## 核心原则
 
-为《纽约客》风格配图编写visual_description时，务必遵循以下原则：
+为《纽约客》风格配图编写 visual_description 时，务必遵循以下原则：
 
-### ✅ 正确示例
+### ✅ 正确示例（中文场景描述）
 
 ```json
 {
   "h2_title": "注意力的魔法",
-  "visual_description": "A busy cafe from bird's eye view, multiple conversations creating sound waves, one spotlight beam illuminating a single table of two people talking, showing selective attention"
+  "visual_description": "一个嘈杂的咖啡馆从鸟瞰视角看去，多组人在交谈产生声波扩散，一束聚光灯从上方照亮一桌专注对话的两人，展现选择性注意力"
 }
 ```
 
 **特点**：
-- ✅ 使用英文（AI图片生成模型对英文理解更准确）
-- ✅ 描述具体的视觉场景和物体
-- ✅ 用隐喻手法表达抽象概念
+- ✅ **使用中文**（即梦 API 是国产模型，中文理解更准确、生成更快）
+- ✅ **描述具体的视觉场景**（物体、动作、空间关系）
+- ✅ **用场景隐喻抽象概念**（由 Claude 完成隐喻转换，不是由 API 完成）
 - ✅ **不包含任何文字指令**（如"底部标题"、"标注"等）
 
-### ❌ 错误示例
+### ❌ 错误示例 1：包含风格指令
 
 ```json
 {
   "h2_title": "注意力的魔法",
-  "visual_description": "嘈杂咖啡馆的鸟瞰图，多个人在交谈，声波以同心圆扩散，一束聚光灯从天花板投下照亮一桌对话的两人，用黑白墨水绘制场景，朱红色标注聚光灯，底部标题：专注的力量"
+  "visual_description": "嘈杂咖啡馆的鸟瞰图，用黑白墨水绘制场景，朱红色标注聚光灯，底部标题：专注的力量"
 }
 ```
 
 **问题**：
-- ❌ 使用中文（AI理解不如英文准确）
 - ❌ 包含风格指令（"用黑白墨水绘制"、"朱红色标注"）→ 这些由系统统一控制，不需要重复
-- ❌ **包含文字指令**（"底部标题：专注的力量"）→ 会导致AI在图中画文字，违背纽约客风格
+- ❌ **包含文字指令**（"底部标题：专注的力量"）→ 会导致 AI 在图中画文字
+
+### ❌ 错误示例 2：抽象指令而非具体场景
+
+```json
+{
+  "h2_title": "注意力的魔法",
+  "visual_description": "用隐喻手法表现注意力的选择性，体现专注的力量"
+}
+```
+
+**问题**：
+- ❌ 这是**元指令**，不是具体场景
+- ✅ 应该由 Claude 理解"注意力的选择性"后，生成具体场景（如"聚光灯照亮一桌人"）
 
 ## 编写模板
 
 ```
-[主体物体/场景] + [动作/状态] + [隐喻含义]
+[具体场景] + [视觉元素] + [隐喻含义的暗示]
 ```
 
-### 示例1：对比类
+### 示例 1：对比类
 
 ```
-Two-road comparison: upper shows single-lane with cars queuing slowly, lower shows multi-lane highway with cars speeding in parallel, illustrating parallelization advantage
+双路对比：上方是单车道汽车缓慢排队，下方是多车道汽车并行快速通过，展现并行化优势
 ```
 
-### 示例2：隐喻类
+**分析**：
+- 具体场景：双路对比图
+- 视觉元素：单车道 vs 多车道，排队 vs 并行
+- 隐喻：串行处理 vs 并行处理
+
+### 示例 2：隐喻类
 
 ```
-A razor blade close-up with sharp clean edge, scattered complex parts and gears beside it being shaved off, sharp contrast, illustrating Occam's Razor principle
+一把剃刀的特写，锋利边缘清晰锐利，旁边散落着被剃掉的复杂零件和齿轮，对比鲜明，展现奥卡姆剃刀原理
 ```
 
-### 示例3：关系网络类
+**分析**：
+- 具体场景：剃刀特写 + 散落零件
+- 视觉元素：锋利简洁 vs 复杂零件
+- 隐喻：简化原则，去除冗余
+
+### 示例 3：关系网络类
 
 ```
-A page with text, multiple dotted lines connecting different words to each other, forming a spider-web relationship network, some lines thick and some thin
+一页文本，多条虚线连接不同单词，形成蜘蛛网状的关系网络，有的线粗有的线细
 ```
+
+**分析**：
+- 具体场景：文本页面 + 连接线
+- 视觉元素：蜘蛛网状网络，粗细不同的线
+- 隐喻：注意力机制的词语关联强度
 
 ## 风格控制
 
-**不要**在visual_description中描述风格细节，这些已由系统统一控制：
+**不要**在 visual_description 中描述风格细节，这些已由系统统一控制：
 
-系统自动添加的风格prompt：
+系统自动添加的风格 prompt（纯中文，简洁优化）：
 ```
-The New Yorker magazine editorial cartoon style,
-single-line pen and ink drawing, minimalist line art,
-black and white sketch with subtle red accent (#E34234),
-clean white background, sophisticated humor,
-NO text, NO labels, NO words in the image
+纽约客杂志插图风格：钢笔线条速写，黑白为主，朱红色点缀，简约留白。
+16:9横幅构图，手绘松弛质感，画面中不要任何文字
 ```
 
-你只需要描述：**画什么内容**，而不是**怎么画**。
+**你只需要描述**：**画什么内容**（具体场景），而不是**怎么画**（风格指令）。
 
-## 常见错误
+## 常见错误对照表
 
-| 错误 | 原因 | 修正 |
-|------|------|------|
-| "底部标题：XXX" | 会导致AI画文字 | 删除所有文字指令 |
-| "用黑白线条绘制" | 风格已统一控制 | 只描述内容，不描述风格 |
-| "朱红色标注XX" | 颜色使用已统一 | 只说"标注XX"即可 |
-| 使用中文描述 | AI理解不准确 | 改用英文 |
-| 描述过于抽象 | AI无法可视化 | 使用具体物体和场景 |
+| 错误类型 | 错误示例 | 原因 | 正确做法 |
+|---------|---------|------|---------|
+| 文字指令 | "底部标题：XXX" | 会导致 AI 画文字 | 删除所有文字指令 |
+| 风格重复 | "用黑白线条绘制" | 风格已统一控制 | 只描述内容，不描述风格 |
+| 颜色重复 | "朱红色标注 XX" | 颜色使用已统一 | 只说"标注 XX"或"突出 XX" |
+| 元指令 | "用隐喻手法表现创新" | 这是给 Claude 的指令，不是场景 | 写出具体隐喻场景（如"一扇紧闭的门突然打开"） |
+| 过于抽象 | "展示突破与转折" | AI 无法可视化抽象概念 | 使用具体物体和场景 |
 
 ## 质量检查清单
 
-写完visual_description后，检查：
+写完 visual_description 后，逐项检查：
 
-- [ ] 使用英文
-- [ ] 描述了具体的物体/场景
+- [ ] 使用中文
+- [ ] 描述了具体的物体/场景（能画出来的）
 - [ ] 没有包含"底部标题"、"标注文字"等文字指令
-- [ ] 没有重复描述风格（黑白、线条、朱红色等）
-- [ ] 长度在30-80词之间（太短概念不清，太长AI抓不住重点）
-- [ ] 有明确的视觉隐喻，能表达H2章节的核心观点
+- [ ] 没有重复描述风格（黑白、线条、朱红色、纽约客风格等）
+- [ ] 不是元指令（"用隐喻手法"、"体现概念"），而是具体场景
+- [ ] 长度在 30-80 字之间（太短不清楚，太长抓不住重点）
+- [ ] 有明确的视觉隐喻，能表达 H2 章节的核心观点
 
 ## 改进对比
 
-### 改进前（会产生问题）
+### 改进前（多个问题）
 
 ```json
 {
-  "visual_description": "一条蜿蜒的单行道路，汽车排成长队缓慢前行，最前面的车已模糊不清，用黑白钢笔线条绘制道路和车辆，朱红色标注堵塞的队列，底部标题：记忆的拥堵"
+  "visual_description": "用对比手法展示串行和并行的差异，体现性能优势，底部标题：并行的力量"
 }
 ```
 
-问题：中文、风格重复、包含文字指令
+**问题**：
+1. 元指令（"用对比手法"）而非具体场景
+2. 抽象概念（"性能优势"）而非可视化元素
+3. 包含文字指令（"底部标题"）
 
 ### 改进后（正确）
 
 ```json
 {
-  "visual_description": "A winding single-lane road with cars queuing slowly, the front cars fading into distance, conveying the limitation of sequential processing"
+  "visual_description": "双路对比：上方是单车道汽车缓慢排队，下方是多车道汽车并行快速通过，展现并行化优势"
 }
 ```
 
-改进：英文、只描述内容、无文字指令、清晰的隐喻
+**改进**：
+1. ✅ 具体场景（双路、汽车、排队 vs 并行）
+2. ✅ 可视化元素（单车道 vs 多车道）
+3. ✅ 无文字指令
+4. ✅ 用场景隐喻概念（并行处理的性能优势）
+
+---
+
+## 核心要点总结
+
+1. **Claude 的职责**：理解抽象概念 → 转换为具体场景（完成隐喻）
+2. **visual_description**：具体的、可视化的场景描述（中文）
+3. **系统的职责**：添加统一的纽约客风格 prompt
+4. **即梦 API**：根据完整 prompt 生成图片
+
+**记住**：你是在描述"画面中有什么"，而不是"应该怎么画"或"想表达什么"。

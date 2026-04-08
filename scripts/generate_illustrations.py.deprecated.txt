@@ -1,0 +1,22 @@
+此脚本已被弃用
+================
+
+**原因**：
+- 文件命名格式错误：使用 `illustration_{idx}.png` 或 `{prefix}_illustration_{idx}.png`
+- 不包含论文名称，会导致文件名冲突和 Obsidian 索引混乱
+- 单线程执行，效率低
+
+**替代方案**：
+使用 `generate_illustrations_v2.py`，它具有：
+- ✅ 全局唯一文件名：`{paper_slug}-{idx:02d}.png`
+- ✅ 并发生成（ThreadPoolExecutor，3-4x 加速）
+- ✅ 完整功能
+- ✅ 正确的统一存储路径
+
+**迁移命令**：
+```bash
+python ~/.claude/skills/qiaomu-paper-interpreter/scripts/generate_illustrations_v2.py \
+  论文.md \
+  visual_config.json \
+  --output-dir ~/乔木新知识库/07.附件/papers/{paper_name}_{date}
+```

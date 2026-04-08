@@ -148,7 +148,7 @@ def generate_single_image(task):
 
     # 完整相对路径（从根目录开始），适用于文章移动到根目录后
     paper_id = paper_dir.name
-    image_rel_path = f"20-29 学习/25 论文库/21.01 papers/{paper_id}/{output_dir}/{image_filename}"
+    image_rel_path = f"papers/{paper_id}/{output_dir}/{image_filename}"
 
     result = {
         'idx': idx,

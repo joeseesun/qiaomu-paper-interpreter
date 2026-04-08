@@ -11,12 +11,16 @@
 - ✅ **生活化类比**：用日常例子帮助理解
 - ✅ **论文原图提取**：自动提取所有Figure和Table
 - ✅ **《纽约客》风格配图**：16:9横幅，黑白线条+朱红色点缀，底部中文标题
+- ✅ **免费配图选项**：支持免费模型（jimeng-image-4.1）和付费模型（4.5）选择
 
 ## 快速开始
 
 ```bash
-# 在Claude Code中使用
+# 在Claude Code中使用（默认付费配图）
 解读 https://arxiv.org/pdf/1706.03762
+
+# 使用免费配图
+解读这篇论文，免费配图 https://arxiv.org/pdf/1706.03762
 ```
 
 自动执行：
@@ -25,6 +29,8 @@
 3. 自动提取所有论文图表（Figure/Table）
 4. 撰写乔木风格解读文章
 5. 生成《纽约客》风格配图（每个H2章节）
+   - 默认：付费模型（jimeng-image-4.5），质量更高
+   - 免费：免费模型（jimeng-image-4.1），质量略低但完全免费
 6. 保存最终文件到根目录（用H1标题命名）
 
 ## 目录结构
@@ -94,7 +100,7 @@ export JIMENG_API_URL="http://localhost:8000"
 papers/Transformer_2017/
 ├── Transformer_2017.pdf           # 原始PDF
 ├── metadata.json                  # 元数据
-├── extracted_text.txt             # 提取的文本
+├── extracted_text.md              # 提取的文本（Markdown格式）
 ├── Transformer论文_解读.md         # 工作副本
 └── images/
     ├── Transformer_2017_figure1.png    # 论文原图

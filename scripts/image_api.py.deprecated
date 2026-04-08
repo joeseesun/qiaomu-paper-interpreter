@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+"""
+图片生成API包装器
+支持即梦API和Gemini API
+"""
+import os
+import requests
+import time
+# 自动加载 .env 文件
+from load_env import load_env_file
+load_env_file()
+from pathlib import Path
+
+
+class ImageGenerator:
+    """统一的图片生成接口"""
+    
+    def __init__(self, provider='jimeng', jimeng_model='jimeng-image-4.5'):
+        """
+        初始化图片生成器
+        
+        参数:
+            provider: 'jimeng' 或 'gemini' 或 'auto'
+            jimeng_model: 即梦模型版本 ('jimeng-image-4.5' 或 'jimeng-image-4.1')
+        """
+        self.provider = provider
+        self.jimeng_model = jimeng_model
+        
+        # 从环境变量读取配置
+        self.jimeng_session_id = os.environ.get('JIMENG_SESSION_ID')
+        self.gemini_api_key = os.environ.get('GEMINI_API_KEY')
+        
+    def generate_newyorker_style(self, visual_strategy, caption='', aspect_ratio='16:9', max_retries=2):
+        """
+        生成纽约客风格的图片
+        
+        参数:
+            visual_strategy: 视觉描述（英文）
+            caption: 图片标题（中文）
+            aspect_ratio: 宽高比 ('16:9', '1:1', '9:16')
+            max_retries: 最大重试次数
+            
+        返回:
+            (image_url, used_provider)
+        """
+        if self.provider == 'auto':
+            # 自动选择：优先即梦，失败后尝试Gemini
+            try:
+                return self._generate_jimeng(visual_strategy, caption, aspect_ratio, max_retries)
+            except Exception as e:
+                print(f"⚠️  即梦API失败: {e}，尝试Gemini...")
+                return self._generate_gemini(visual_strategy, caption, aspect_ratio, max_retries)
+        elif self.provider == 'jimeng':
+            return self._generate_jimeng(visual_strategy, caption, aspect_ratio, max_retries)
+        elif self.provider == 'gemini':
+            return self._generate_gemini(visual_strategy, caption, aspect_ratio, max_retries)
+        else:
+            raise ValueError(f"不支持的provider: {self.provider}")
+    
+    def _generate_jimeng(self, visual_strategy, caption, aspect_ratio, max_retries):
+        """使用即梦API生成图片"""
+        if not self.jimeng_session_id:
+            raise ValueError("未设置JIMENG_SESSION_ID环境变量")
+        
+        # 宽高比映射
+        size_map = {
+            '16:9': (1792, 1024),
+            '1:1': (1024, 1024),
+            '9:16': (1024, 1792)
+        }
+        width, height = size_map.get(aspect_ratio, (1792, 1024))
+        
+        # 构建提示词
+        style_prompt = "Black and white pen and ink sketch, loose confident strokes, intentional white space, New Yorker magazine illustration style, minimalist, elegant"
+        if caption:
+            full_prompt = f"{visual_strategy}. {style_prompt}. Chinese caption at bottom: {caption}"
+        else:
+            full_prompt = f"{visual_strategy}. {style_prompt}"
+        
+        url = "https://jimeng.jianying.com/jimeng/v1/api/ai_painting/complete"
+        headers = {
+            "Authorization": f"Bearer {self.jimeng_session_id}",
+            "Content-Type": "application/json"
+        }
+        
+        data = {
+            "model": self.jimeng_model,
+            "prompt": full_prompt,
+            "width": width,
+            "height": height,
+            "sample_strength": 0.7
+        }
+        
+        for attempt in range(max_retries + 1):
+            try:
+                response = requests.post(url, headers=headers, json=data, timeout=60)
+                response.raise_for_status()
+                
+                result = response.json()
+                if 'data' in result and 'images' in result['data'] and result['data']['images']:
+                    image_url = result['data']['images'][0]['url']
+                    return image_url, self.jimeng_model
+                else:
+                    raise ValueError(f"即梦API返回格式错误: {result}")
+                    
+            except Exception as e:
+                if attempt < max_retries:
+                    time.sleep(2)  # 重试前等待
+                    continue
+                else:
+                    raise Exception(f"即梦API失败: {e}")
+        
+    def _generate_gemini(self, visual_strategy, caption, aspect_ratio, max_retries):
+        """使用Gemini API生成图片"""
+        if not self.gemini_api_key:
+            raise ValueError("未设置GEMINI_API_KEY环境变量")
+        
+        # Gemini暂不可用（503错误）
+        raise NotImplementedError("Gemini API当前不可用（503错误）")
+    
+    def save_image(self, image_url, output_path):
+        """
+        下载并保存图片
+        
+        参数:
+            image_url: 图片URL
+            output_path: 保存路径
+        """
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        response = requests.get(image_url, timeout=30)
+        response.raise_for_status()
+        
+        with open(output_path, 'wb') as f:
+            f.write(response.content)
+        
+        return str(output_path)
+
+
+if __name__ == "__main__":
+    # 测试代码
+    generator = ImageGenerator(provider='jimeng')
+    try:
+        image_url, provider = generator.generate_newyorker_style(
+            visual_strategy="A cat sitting on a windowsill, looking outside",
+            caption="窗台上的猫",
+            aspect_ratio='16:9'
+        )
+        print(f"✅ 生成成功: {image_url}")
+        print(f"   使用提供商: {provider}")
+    except Exception as e:
+        print(f"❌ 生成失败: {e}")

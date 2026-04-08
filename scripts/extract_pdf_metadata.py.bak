@@ -227,7 +227,7 @@ def create_metadata_json(pdf_path, url=None, user_hint=None):
     return paper_id, metadata
 
 
-def organize_paper_directory(pdf_path, output_base="20-29 学习/25 论文库/21.01 papers", url=None, user_hint=None):
+def organize_paper_directory(pdf_path, output_base="01.inbox/papers", url=None, user_hint=None):
     """
     组织论文目录结构
 
@@ -278,7 +278,7 @@ def main():
         sys.exit(1)
 
     pdf_path = sys.argv[1]
-    output_base = sys.argv[2] if len(sys.argv) > 2 else "20-29 学习/25 论文库/21.01 papers"
+    output_base = sys.argv[2] if len(sys.argv) > 2 else "papers"
     url = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else None
     user_hint = sys.argv[4] if len(sys.argv) > 4 else None
 
