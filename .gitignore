@@ -34,7 +34,12 @@ test_output/
 *.jpg
 *.jpeg
 
-# 敏感信息
+# 敏感信息（本地配置，不提交）
+.env
 *.env
 .env.*
 *_config_local.json
+
+# 个人论文数据（本地工作目录，不提交）
+papers/
+*.pdf
