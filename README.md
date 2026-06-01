@@ -76,8 +76,16 @@ pip install pdfplumber pymupdf requests
 
 ## 安装
 
+已安装 Claude Code CLI：
+
 ```bash
 claude skill install https://github.com/joeseesun/qiaomu-paper-interpreter
+```
+
+未全局安装 `claude` 时，可以用 `npx` 临时运行 Claude Code CLI（需要 Node.js 18+）：
+
+```bash
+npx -y @anthropic-ai/claude-code skill install https://github.com/joeseesun/qiaomu-paper-interpreter
 ```
 
 ## 目录结构
